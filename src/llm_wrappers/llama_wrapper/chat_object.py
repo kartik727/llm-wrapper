@@ -1,6 +1,6 @@
 from llm_wrappers.utils.chat_object import BaseChatObject, BaseMessage
 
-class OpenAIChatObject(BaseChatObject):
+class LlamaChatObject(BaseChatObject):
     def formatted_prompt(self, prompt: BaseMessage) -> list[dict]:
         context = [self.sys_prompt.formatted_msg]
         for exchange in self._history:
