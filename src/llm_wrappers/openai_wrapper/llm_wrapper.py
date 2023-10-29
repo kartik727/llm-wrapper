@@ -1,23 +1,12 @@
 import logging
 import time
-import json
-from dataclasses import dataclass
-from enum import Enum
-import shlex
-import pandas as pd
 
 import openai
 from openai.error import ServiceUnavailableError
 
 from llm_wrappers.base_wrapper import ChatLLMWrapper
-from llm_wrappers.openai_wrapper.chat_object import OpenAIChatObject
 from llm_wrappers.openai_wrapper.config import OpenAIConfig
-from llm_wrappers.openai_wrapper.helpers import Role, OpenAIMessage, OpenAIFunctionCall, OpenAIFunctionResponse, UnknownResponseError
-
-openai.api_key = '' # Enter you API key here
-model_name = 'gpt-3.5-turbo'
-
-logging.basicConfig(level=logging.DEBUG)
+from llm_wrappers.openai_wrapper.helpers import Role, OpenAIMessage, OpenAIFunctionCall, UnknownResponseError
 
 class OpenAIWrapper(ChatLLMWrapper):
     def __init__(self, config:OpenAIConfig):

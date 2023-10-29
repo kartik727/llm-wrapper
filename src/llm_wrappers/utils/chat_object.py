@@ -24,7 +24,7 @@ class ChatInfo:
         self.response_logs = []
 
 class BaseChatObject(ABC):
-    def __init__(self, sys_prompt:str):
+    def __init__(self, sys_prompt:BaseMessage):
         self._sys_prompt = sys_prompt
         self._history = []
 
@@ -33,7 +33,7 @@ class BaseChatObject(ABC):
         ...
 
     @property
-    def sys_prompt(self)->str:
+    def sys_prompt(self)->BaseMessage:
         return self._sys_prompt
 
     @property
