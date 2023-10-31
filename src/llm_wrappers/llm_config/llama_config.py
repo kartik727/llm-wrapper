@@ -41,4 +41,4 @@ class LlamaConfig(BaseConfig):
     def validate_device(device):
         if device not in ['cpu', 'cuda', 'try_cuda', 'auto']:
             raise ValueError(f'Invalid device: `{device}`')
-
+        return device
