@@ -1,5 +1,5 @@
 import logging
-
+import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from llm_wrappers.wrappers.base_wrapper import CompletionLLMWrapper, ChatLLMWrapper
@@ -14,6 +14,11 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
     def __init__(self, config:LlamaConfig):
         super().__init__(config)
 
+        if self._config.device in ['auto', 'try_cuda']:
+            self._device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        else:
+            self._device = self._config.device
+
         if self._config.device == 'auto':
             self._model = AutoModelForCausalLM.from_pretrained(
                 self._config.model_name,
@@ -25,19 +30,18 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
                 self._config.model_name,
                 token = self._config.hf_api_key,
                 **self._config.model_kwargs)
-            self._model.to(self._config.device)
-            
+            self._model.to(self._device)
+
         self._tokenizer = AutoTokenizer.from_pretrained(
             self._config.model_name,
             token = self._config.hf_api_key,
             **self._config.tokenizer_kwargs)
 
-        if self._config.tokenizer_padding_token is not None:
-            self._tokenizer.pad_token = self._config.tokenizer_padding_token
+        self._set_tokenizer_padding_token(self._config.tokenizer_padding_token)
 
     def get_response(self, prompt:list[dict], **kwargs):
         templated_prompt = self._template_prompt(prompt)
-        inputs = self._tokenizer(templated_prompt, return_tensors='pt').to(self._config.device)
+        inputs = self._tokenizer(templated_prompt, return_tensors='pt').to(self._device)
         generated_ids = self._model.generate(inputs.input_ids, **kwargs)
         response = self._tokenizer.batch_decode(
             generated_ids,
@@ -57,7 +61,7 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
         templated_prompts = [self._template_prompt(prompt) for prompt in prompts]
         inputs = self._tokenizer(
             templated_prompts, return_tensors='pt', padding=True
-        ).to(self._config.device)
+        ).to(self._device)
         generated_ids = self._model.generate(inputs.input_ids, **kwargs)
         
         info = {
@@ -80,6 +84,10 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
     
     def _template_prompt(self, prompt:list[dict]):
         return self._tokenizer.apply_chat_template(prompt, tokenize=False)
+    
+    def _set_tokenizer_padding_token(self, padding_token:str):
+        if padding_token is not None:
+            self._tokenizer.pad_token = getattr(self._tokenizer, padding_token)
     
     def new_chat(self, sys_prompt:str)->LlamaChatObject:
         return LlamaChatObject(

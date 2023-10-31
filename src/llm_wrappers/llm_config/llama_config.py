@@ -8,9 +8,7 @@ class LlamaConfig(BaseConfig):
             model_kwargs:dict=None, tokenizer_kwargs:dict=None):
         self._model_name = model_name
         self._hf_api_key = hf_api_key
-        if device in ['auto', 'try_cuda']:
-            device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-        self._device = device
+        self._device = self.validate_device(device)
         self._tokenizer_padding_token = tokenizer_padding_token
         self._model_kwargs = model_kwargs
         self._tokenizer_kwargs = tokenizer_kwargs
@@ -38,4 +36,9 @@ class LlamaConfig(BaseConfig):
     @property
     def tokenizer_kwargs(self)->dict:
         return self._tokenizer_kwargs
+    
+    @staticmethod
+    def validate_device(device):
+        if device not in ['cpu', 'cuda', 'try_cuda', 'auto']:
+            raise ValueError(f'Invalid device: `{device}`')
 
