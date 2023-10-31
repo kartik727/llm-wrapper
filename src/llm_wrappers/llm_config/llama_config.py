@@ -1,14 +1,14 @@
 import torch
 
-from llm_wrappers.utils.llm_config import BaseConfig
+from llm_wrappers.llm_config.base_config import BaseConfig
 
 class LlamaConfig(BaseConfig):
     def __init__(self, model_name:str, hf_api_key:str, /, *,
-            device:str='auto', tokenizer_padding_token:str=None, 
+            device:str='try_cuda', tokenizer_padding_token:str=None, 
             model_kwargs:dict=None, tokenizer_kwargs:dict=None):
         self._model_name = model_name
         self._hf_api_key = hf_api_key
-        if device == 'auto':
+        if device in ['auto', 'try_cuda']:
             device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self._device = device
         self._tokenizer_padding_token = tokenizer_padding_token

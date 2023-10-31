@@ -2,25 +2,35 @@ import logging
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from llm_wrappers.base_wrapper import CompletionLLMWrapper, ChatLLMWrapper
-from llm_wrappers.llama_wrapper.config import LlamaConfig
-from llm_wrappers.llama_wrapper.helpers import LlamaMessage, Role
+from llm_wrappers.wrappers.base_wrapper import CompletionLLMWrapper, ChatLLMWrapper
+from llm_wrappers.llm_config import LlamaConfig
+from llm_wrappers.io_objects.llama_io_object import (LlamaMessage, Role,
+    LlamaChatObject, LlamaCompletionObject)
 
 class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
     INST_START = '[INST]'
     INST_END = '[/INST]'
 
     def __init__(self, config:LlamaConfig):
-        super(LlamaWrapper, self).__init__(config)
-        self._model = AutoModelForCausalLM.from_pretrained(
-            self._config.model_name,
-            token = self._config.hf_api_key,
-            **self._config.model_kwargs)
+        super().__init__(config)
+
+        if self._config.device == 'auto':
+            self._model = AutoModelForCausalLM.from_pretrained(
+                self._config.model_name,
+                token = self._config.hf_api_key,
+                device_map = 'auto',
+                **self._config.model_kwargs)
+        else:
+            self._model = AutoModelForCausalLM.from_pretrained(
+                self._config.model_name,
+                token = self._config.hf_api_key,
+                **self._config.model_kwargs)
+            self._model.to(self._config.device)
+            
         self._tokenizer = AutoTokenizer.from_pretrained(
             self._config.model_name,
             token = self._config.hf_api_key,
             **self._config.tokenizer_kwargs)
-        self._model.to(self._config.device)
 
         if self._config.tokenizer_padding_token is not None:
             self._tokenizer.pad_token = self._config.tokenizer_padding_token
@@ -70,4 +80,40 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
     
     def _template_prompt(self, prompt:list[dict]):
         return self._tokenizer.apply_chat_template(prompt, tokenize=False)
-
+    
+    def new_chat(self, sys_prompt:str)->LlamaChatObject:
+        return LlamaChatObject(
+            LlamaMessage(
+                Role.SYSTEM,
+                sys_prompt)
+            )
+    
+    def new_completion(self, sys_prompt:str)->LlamaCompletionObject:
+        return LlamaCompletionObject(
+            LlamaMessage(
+                Role.SYSTEM,
+                sys_prompt)
+            )
+    
+    def chat(self, context:LlamaChatObject, user_prompt:str
+        )->tuple[LlamaChatObject, str]:
+        context, response = super().chat(
+            context,
+            LlamaMessage(Role.USER, user_prompt)
+        )
+        return context, response.text
+    
+    def completion(self, comp_obj:LlamaCompletionObject, prompt:str)->str:
+        return super().completion(
+            comp_obj,
+            LlamaMessage(Role.USER, prompt)
+        ).text
+    
+    def batch_completion(self, comp_obj:LlamaCompletionObject,
+            prompts:list[str], batch_size:int
+        )->list[str]:
+        completion = super().batch_completion(
+            comp_obj,
+            [LlamaMessage(Role.USER, prompt) for prompt in prompts],
+            batch_size)
+        return [response.text for response in completion]

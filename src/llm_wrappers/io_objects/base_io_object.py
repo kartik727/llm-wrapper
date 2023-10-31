@@ -46,7 +46,7 @@ class BaseChatObject(ABC):
     def reset(self)->None:
         self._history = []
 
-class BaseSysObject(ABC):
+class BaseCompletionObject(ABC):
     def __init__(self, sys_prompt:str):
         self._sys_prompt = sys_prompt
 

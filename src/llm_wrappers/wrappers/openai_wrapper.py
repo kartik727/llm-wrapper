@@ -4,13 +4,14 @@ import time
 import openai
 from openai.error import ServiceUnavailableError
 
-from llm_wrappers.base_wrapper import ChatLLMWrapper
-from llm_wrappers.openai_wrapper.config import OpenAIConfig
-from llm_wrappers.openai_wrapper.helpers import Role, OpenAIMessage, OpenAIFunctionCall, UnknownResponseError
+from llm_wrappers.wrappers.base_wrapper import ChatLLMWrapper
+from llm_wrappers.llm_config.openai_config import OpenAIConfig
+from llm_wrappers.io_objects.openai_io_object import (Role, OpenAIMessage,
+    OpenAIFunctionCall, UnknownResponseError, OpenAIChatObject)
 
 class OpenAIWrapper(ChatLLMWrapper):
     def __init__(self, config:OpenAIConfig):
-        super(OpenAIWrapper, self).__init__(config)
+        super().__init__(config)
 
     def get_response(self, prompt:list[dict]):
         # Get the response. Keep retrying until success
@@ -56,3 +57,18 @@ class OpenAIWrapper(ChatLLMWrapper):
             return OpenAIFunctionCall(Role.ASSISTANT, api_fc_params)
         else:
             raise UnknownResponseError(f'Messages with `finish_reason`==`{api_result["finish_reason"]}` cannot be parsed yet.')
+        
+    def new_chat(self, sys_prompt:str)->OpenAIChatObject:
+        return OpenAIChatObject(
+            OpenAIMessage(
+                Role.SYSTEM,
+                sys_prompt)
+            )
+
+    def chat(self, context:OpenAIChatObject, user_prompt:str
+        )->tuple[OpenAIChatObject, str]:
+        context, response = super().chat(
+            context,
+            OpenAIMessage(Role.USER, user_prompt)
+        )
+        return context, response.text

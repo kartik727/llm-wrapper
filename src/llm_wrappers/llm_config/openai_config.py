@@ -1,4 +1,4 @@
-from llm_wrappers.utils.llm_config import BaseConfig
+from llm_wrappers.llm_config.base_config import BaseConfig
 
 class OpenAIConfig(BaseConfig):
     def __init__(self, model_name:str, api_key:str, /, *,
