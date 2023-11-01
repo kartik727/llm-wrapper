@@ -107,14 +107,16 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
         )->tuple[LlamaChatObject, str]:
         context, response = super().chat(
             context,
-            LlamaMessage(Role.USER, user_prompt)
+            LlamaMessage(Role.USER, user_prompt),
+            **context.chat_kwargs
         )
         return context, response.text
     
     def completion(self, comp_obj:LlamaCompletionObject, prompt:str)->str:
         return super().completion(
             comp_obj,
-            LlamaMessage(Role.USER, prompt)
+            LlamaMessage(Role.USER, prompt),
+            **comp_obj.completion_kwargs
         ).text
     
     def batch_completion(self, comp_obj:LlamaCompletionObject,
@@ -123,5 +125,5 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
         completion = super().batch_completion(
             comp_obj,
             [LlamaMessage(Role.USER, prompt) for prompt in prompts],
-            batch_size)
+            batch_size, **comp_obj.completion_kwargs)
         return [response.text for response in completion]

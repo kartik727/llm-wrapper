@@ -18,14 +18,30 @@ class LlamaMessage(BaseMessage):
         return {'role' : self.role.value, 'content' : self.text}
 
 class LlamaChatObject(BaseChatObject):
-    def formatted_prompt(self, prompt: BaseMessage) -> list[dict]:
+    def __init__(self, sys_prompt:LlamaMessage, **kwargs):
+        super().__init__(sys_prompt)
+        self._chat_kwargs = kwargs
+
+    def formatted_prompt(self, prompt: LlamaMessage) -> list[dict]:
         context = [self.sys_prompt.formatted_msg]
         for exchange in self._history:
             context.append(exchange[0].formatted_msg)
             context.append(exchange[1].formatted_msg)
         context.append(prompt.formatted_msg)
         return context
+    
+    @property
+    def chat_kwargs(self)->dict:
+        return self._chat_kwargs
 
 class LlamaCompletionObject(BaseCompletionObject):
-    def formatted_prompt(self, prompt: BaseMessage) -> list[dict]:
+    def __init__(self, sys_prompt:LlamaMessage, **kwargs):
+        super().__init__(sys_prompt)
+        self._completion_kwargs = kwargs
+
+    def formatted_prompt(self, prompt: LlamaMessage) -> list[dict]:
         return [self.sys_prompt.formatted_msg, prompt.formatted_msg]
+    
+    @property
+    def completion_kwargs(self)->dict:
+        return self._completion_kwargs
