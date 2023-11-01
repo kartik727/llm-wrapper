@@ -89,18 +89,20 @@ class LlamaWrapper(CompletionLLMWrapper, ChatLLMWrapper):
         if padding_token is not None:
             self._tokenizer.pad_token = getattr(self._tokenizer, padding_token)
     
-    def new_chat(self, sys_prompt:str)->LlamaChatObject:
+    def new_chat(self, sys_prompt:str, **kwargs)->LlamaChatObject:
         return LlamaChatObject(
             LlamaMessage(
                 Role.SYSTEM,
-                sys_prompt)
+                sys_prompt),
+            **kwargs
             )
     
-    def new_completion(self, sys_prompt:str)->LlamaCompletionObject:
+    def new_completion(self, sys_prompt:str, **kwargs)->LlamaCompletionObject:
         return LlamaCompletionObject(
             LlamaMessage(
                 Role.SYSTEM,
-                sys_prompt)
+                sys_prompt),
+            **kwargs
             )
     
     def chat(self, context:LlamaChatObject, user_prompt:str
