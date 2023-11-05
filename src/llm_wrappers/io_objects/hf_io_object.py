@@ -9,7 +9,7 @@ class Role(Enum):
     ASSISTANT = 'assistant'
 
 @dataclass
-class LlamaMessage(BaseMessage):
+class HFMessage(BaseMessage):
     role: Role
     text: str
 
@@ -17,12 +17,12 @@ class LlamaMessage(BaseMessage):
     def formatted_msg(self):
         return {'role' : self.role.value, 'content' : self.text}
 
-class LlamaChatObject(BaseChatObject):
-    def __init__(self, sys_prompt:LlamaMessage, **kwargs):
+class HFChatObject(BaseChatObject):
+    def __init__(self, sys_prompt:HFMessage, **kwargs):
         super().__init__(sys_prompt)
         self._chat_kwargs = kwargs
 
-    def formatted_prompt(self, prompt: LlamaMessage) -> list[dict]:
+    def formatted_prompt(self, prompt: HFMessage) -> list[dict]:
         context = [self.sys_prompt.formatted_msg]
         for exchange in self._history:
             context.append(exchange[0].formatted_msg)
@@ -34,12 +34,12 @@ class LlamaChatObject(BaseChatObject):
     def chat_kwargs(self)->dict:
         return self._chat_kwargs
 
-class LlamaCompletionObject(BaseCompletionObject):
-    def __init__(self, sys_prompt:LlamaMessage, **kwargs):
+class HFCompletionObject(BaseCompletionObject):
+    def __init__(self, sys_prompt:HFMessage, **kwargs):
         super().__init__(sys_prompt)
         self._completion_kwargs = kwargs
 
-    def formatted_prompt(self, prompt: LlamaMessage) -> list[dict]:
+    def formatted_prompt(self, prompt: HFMessage) -> list[dict]:
         return [self.sys_prompt.formatted_msg, prompt.formatted_msg]
     
     @property
