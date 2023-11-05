@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from llm_wrappers.io_objects.base_io_object import BaseChatObject, BaseCompletionObject, BaseMessage
+from llm_wrappers.io_objects.base_io_object import (
+    BaseChatObject, BaseCompletionObject, BaseMessage)
 from llm_wrappers.llm_config.base_config import BaseConfig
 
 class BaseLLMWrapper(ABC):
@@ -16,6 +17,10 @@ class BaseLLMWrapper(ABC):
         ...
 
 class CompletionLLMWrapper(BaseLLMWrapper):
+    @abstractmethod
+    def new_completion(self, sys_prompt:str, **kwargs)->BaseCompletionObject:
+        ...
+
     def completion(self, comp_obj:BaseCompletionObject, prompt:BaseMessage,
             **kwargs)->BaseMessage:
         return self.get_response(
@@ -33,6 +38,10 @@ class CompletionLLMWrapper(BaseLLMWrapper):
             batch_size, **kwargs)
 
 class ChatLLMWrapper(BaseLLMWrapper):
+    @abstractmethod
+    def new_chat(self, sys_prompt:str, **kwargs)->BaseChatObject:
+        ...
+
     def chat(self,
             context:BaseChatObject,
             prompt:BaseMessage,
