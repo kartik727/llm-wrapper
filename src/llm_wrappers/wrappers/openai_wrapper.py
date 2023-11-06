@@ -157,7 +157,7 @@ class OpenAIWrapper(ChatLLMWrapper):
             )
 
             if isinstance(response, OpenAIMessage):
-                return context, response.content
+                return context, response.text
 
             elif isinstance(response, OpenAIFunctionCall):
                 func_call_response = self._handle_function_call(response)
