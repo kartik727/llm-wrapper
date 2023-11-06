@@ -9,6 +9,8 @@ Subpackages
 
    llm_wrappers.io_objects
    llm_wrappers.llm_config
+   llm_wrappers.utils
+   llm_wrappers.wrappers
 
 Module contents
 ---------------

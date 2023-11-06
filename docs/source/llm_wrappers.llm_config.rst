@@ -12,10 +12,10 @@ llm\_wrappers.llm\_config.base\_config module
    :undoc-members:
    :show-inheritance:
 
-llm\_wrappers.llm\_config.llama\_config module
-----------------------------------------------
+llm\_wrappers.llm\_config.hf\_config module
+-------------------------------------------
 
-.. automodule:: llm_wrappers.llm_config.llama_config
+.. automodule:: llm_wrappers.llm_config.hf_config
    :members:
    :undoc-members:
    :show-inheritance:

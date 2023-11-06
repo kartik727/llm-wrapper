@@ -12,10 +12,10 @@ llm\_wrappers.io\_objects.base\_io\_object module
    :undoc-members:
    :show-inheritance:
 
-llm\_wrappers.io\_objects.llama\_io\_object module
---------------------------------------------------
+llm\_wrappers.io\_objects.hf\_io\_object module
+-----------------------------------------------
 
-.. automodule:: llm_wrappers.io_objects.llama_io_object
+.. automodule:: llm_wrappers.io_objects.hf_io_object
    :members:
    :undoc-members:
    :show-inheritance:
