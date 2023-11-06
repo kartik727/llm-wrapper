@@ -1,3 +1,9 @@
+"""The LLM Wrappers package.
+
+This package contains wrappers with a unified interface for various
+Large Language Models (LLMs).
+"""
+
 import logging
 
 try:
