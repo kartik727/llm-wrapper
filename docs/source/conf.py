@@ -9,7 +9,7 @@
 project = 'LLM Wrappers'
 copyright = '2023, Kartik Choudhary'
 author = 'Kartik Choudhary'
-release = '0.0.5'
+release = '0.0.6'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -24,7 +24,7 @@ extensions = [
 templates_path = ['_templates']
 exclude_patterns = []
 
-
+autodoc_default_flags = ['members', 'undoc-members']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

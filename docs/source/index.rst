@@ -10,6 +10,7 @@ Welcome to LLM Wrappers's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   llm_wrappers
 
 
 Indices and tables
