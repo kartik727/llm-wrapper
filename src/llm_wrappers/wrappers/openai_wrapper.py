@@ -6,8 +6,9 @@ This module contains a wrapper for the OpenAI API.
 import logging
 import time
 
-import openai
-from openai.error import ServiceUnavailableError
+# import openai
+from openai import OpenAI, RateLimitError
+# from openai.error import ServiceUnavailableError
 
 from llm_wrappers.wrappers.base_wrapper import ChatLLMWrapper
 from llm_wrappers.llm_config.openai_config import OpenAIConfig
@@ -21,13 +22,25 @@ class OpenAIWrapper(ChatLLMWrapper):
     This wrapper can be used to query models like `gpt-3.5-turbo` and `gpt-4`
     from the OpenAI API.
     """
-    def __init__(self, config:OpenAIConfig):
+    def __init__(self, config:OpenAIConfig, /, *, functions:list[dict]=None):
         """Initializes the OpenAIWrapper.
 
         Args:
-            config (OpenAIConfig): The config object for the wrapper.
+            config (OpenAIConfig): The config for the wrapper.
+            functions (list[dict], optional): A list of dicts, each dict
+                representing a function. Defaults to None.
         """
         super().__init__(config)
+        self._client = OpenAI(api_key=config.api_key)
+
+        self._chat_kwargs = {}
+        if functions is not None:
+            self._chat_kwargs['tools'] = [
+                {
+                    'type' : 'function',
+                    'function' : func
+                } for func in functions
+            ]
 
     def get_response(self, prompt:list[dict], **kwargs
         )->OpenAIMessage | OpenAIFunctionCall:
@@ -43,15 +56,13 @@ class OpenAIWrapper(ChatLLMWrapper):
                 API.
         """
         # Get the response. Keep retrying until success
-        openai.api_key = self._config.api_key
         success = False
         while not success:
             try:
-                api_response = openai.ChatCompletion.create(
+                api_response = self._client.chat.completions.create(
                     model = self._config.model_name,
-                    messages = prompt)
-                    ## TODO: Add chat kwargs for functions
-                    # **self.chat_kwargs)
+                    messages = prompt,
+                    **self._chat_kwargs)
                 
                 ## TODO: Add stats to the chat object
                 # self._n_prompt_tokens += api_response['usage']['prompt_tokens']
@@ -59,8 +70,8 @@ class OpenAIWrapper(ChatLLMWrapper):
 
                 success = True
                 # self.response_logs.append(ast_result)
-            except ServiceUnavailableError:
-                logging.warning('Service not available. Retrying after %d s.',
+            except RateLimitError:
+                logging.warning('Rate limit reached. Retrying after %d s.',
                     self._config.retry_wait_time)
                 time.sleep(self._config.retry_wait_time)
 
@@ -94,21 +105,21 @@ class OpenAIWrapper(ChatLLMWrapper):
         Returns:
             OpenAIMessage | OpenAIFunctionCall: The parsed response.
         """
-        api_result = api_response['choices'][0]
-        assert api_result['message']['role'] == 'assistant', \
-            f'Prompt response must be from `assistant`, not `{api_result["message"]["role"]}`'
+        api_result = api_response.choices[0]
+        assert api_result.message.role == 'assistant', \
+            f'Prompt response must be from `assistant`, not `{api_result.message.role}`'
 
-        if api_result['finish_reason'] == 'stop':
-            api_txt = api_result['message']['content']
+        if api_result.finish_reason == 'stop':
+            api_txt = api_result.message.content
             logging.debug('Prompt response (text): %s', api_txt)
             return OpenAIMessage(Role.ASSISTANT, api_txt)
-        elif api_result['finish_reason'] == 'function_call':
-            api_fc_params = api_result['message']['function_call']
+        elif api_result.finish_reason == 'function_call':
+            api_fc_params = api_result.message.function_call
             logging.debug('Prompt response (func call): %s', api_fc_params)
             return OpenAIFunctionCall(Role.ASSISTANT, api_fc_params)
         else:
             raise UnknownResponseError('Messages with `finish_reason`==`'+
-                api_result['finish_reason']+'` cannot be parsed yet.')
+                api_result.finish_reason+'` cannot be parsed yet.')
 
     def _handle_function_call(self, fc:OpenAIFunctionCall):
         """Handles a function call from the API. This method should be
