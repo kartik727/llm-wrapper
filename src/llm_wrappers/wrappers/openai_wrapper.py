@@ -35,12 +35,6 @@ class OpenAIWrapper(ChatLLMWrapper):
 
         self._chat_kwargs = {}
         if functions is not None:
-            print([
-                {
-                    'type' : 'function',
-                    'function' : func
-                } for func in functions
-            ])
             self._chat_kwargs['tools'] = [
                 {
                     'type' : 'function',
