@@ -1,0 +1,8 @@
+order_id,order_status,refund_available
+10045,Delivered,False
+10046,Order Recieved,True
+10047,In Transit,True
+10048,Delivered,True
+10049,In Transit - Delayed,True
+10050,Return Initiated,True
+10051,Return Complete,False

@@ -1,0 +1,118 @@
+{
+    "functions" : [
+        {
+        "name": "is_shipping_available",
+        "description": "Whether items can be shipped to city `city_name` in state `state_code`. Returns \"True\" or \"False\"",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "city_name": {
+                    "type": "string",
+                    "description": "The city, e.g. San Francisco"
+                },
+                "state_code": {
+                    "type": "string",
+                    "description": "The two-character state code, e.g. CA"
+                }
+            },
+            "required": ["city_name", "state_code"]
+            }
+        },
+        {
+        "name": "get_order_status",
+        "description": "Get status of the order with the given `order_id`. Returns the status as a string.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string",
+                    "description": "Order ID of the order. E.g. 100433"
+                }
+            },
+            "required": ["order_id"]
+            }
+        },
+        {
+        "name": "check_refund_available",
+        "description": "Check if the order with the given `order_id` is eligible for a refund. Returns \"True\" or \"False\"",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string",
+                    "description": "Order ID of the order. E.g. 100433"
+                }
+            },
+            "required": ["order_id"]
+            }
+        },
+        {
+        "name": "get_product_details",
+        "description": "Get details of the product with the given `product_id` in a JSON formatted string",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "string",
+                    "description": "Product ID of the product. E.g. 503423"
+                }
+            },
+            "required": ["product_id"]
+            }
+        },
+        {
+        "name": "get_product_suggestions",
+        "description": "Get suggestions for products for the given `category`. Returns a string containing a comma-separated list of product ids.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "cateogory": {
+                    "type": "string",
+                    "description": "Category of products, e.g. Toy. Category of a product can be retrieved using the `get_product_details` function."
+                }
+            },
+            "required": ["category"]
+            }
+        },
+        {
+        "name": "sys_request",
+        "description": "Make a query in natural language to a human operator, for information that is not available by other functions",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Query in natural language for a human operator."
+                }
+            },
+            "required": ["query"]
+            }
+        },
+        {
+        "name": "request_transfer_to_human",
+        "description": "End the current chat and transfer to human support expert",
+        "parameters": {
+            "type": "object",
+            "properties": {}
+            }
+        },
+        {
+        "name": "chat_complete",
+        "description": "Call this function with the analysis of the chat when the chat with the customer is over.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "issue_resolved": {
+                    "type": "string",
+                    "description": "Whether the customer issue was resolved. Must be \"True\" or \"False\""
+                },
+                "customer_satisfaction_level": {
+                    "type": "string",
+                    "description": "The satisfaction level of the customer with the chat support. Must be \"Positive\", \"Neutral\" or \"Negative\""
+                }
+            },
+            "required": ["issue_resolved", "customer_satisfaction_level"]
+            }
+        }
+    ]
+}
