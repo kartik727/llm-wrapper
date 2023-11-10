@@ -10,13 +10,13 @@ class Role(Enum):
     SYSTEM = 'system'
     USER = 'user'
     ASSISTANT = 'assistant'
-    FUNCTION = 'function'
+    FUNCTION = 'tool'
 
 @dataclass
 class OpenAIMessage(BaseMessage):
     role: Role
     text: str
-    
+
     @property
     def formatted_msg(self):
         return {'role' : self.role.value, 'content' : self.text}
@@ -25,20 +25,28 @@ class OpenAIMessage(BaseMessage):
 class OpenAIFunctionResponse(BaseMessage):
     role: Role
     name: str
+    tool_call_id: str
     text: str
 
     @property
     def formatted_msg(self):
-        return {'role' : self.role.value, 'name' : self.name, 'content' : self.text}
+        return {'tool_call_id' : self.tool_call_id, 'role' : self.role.value, 
+                'name' : self.name, 'content' : self.text}
 
 @dataclass
 class OpenAIFunctionCall(BaseMessage):
     role: Role
+    name: str
+    tool_call_id: str
     params: dict
 
     @property
     def formatted_msg(self):
-        return {'role' : self.role.value, 'content' : None, 'function_call' : self.params}
+        return { 'content' : None, 'role' : self.role.value,
+            'tool_calls' : [
+                {'id' : self.tool_call_id, 'function' : {
+                    'name' : self.name, 'arguments' : self.params},
+                'type' : 'function'}]}
 
 class OpenAIChatObject(BaseChatObject):
     def formatted_prompt(self, prompt: BaseMessage) -> list[dict]:

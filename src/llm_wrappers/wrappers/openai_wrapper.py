@@ -35,6 +35,12 @@ class OpenAIWrapper(ChatLLMWrapper):
 
         self._chat_kwargs = {}
         if functions is not None:
+            print([
+                {
+                    'type' : 'function',
+                    'function' : func
+                } for func in functions
+            ])
             self._chat_kwargs['tools'] = [
                 {
                     'type' : 'function',
@@ -63,7 +69,7 @@ class OpenAIWrapper(ChatLLMWrapper):
                     model = self._config.model_name,
                     messages = prompt,
                     **self._chat_kwargs)
-                
+
                 ## TODO: Add stats to the chat object
                 # self._n_prompt_tokens += api_response['usage']['prompt_tokens']
                 # self._n_completion_tokens += api_response['usage']['completion_tokens']
@@ -113,15 +119,16 @@ class OpenAIWrapper(ChatLLMWrapper):
             api_txt = api_result.message.content
             logging.debug('Prompt response (text): %s', api_txt)
             return OpenAIMessage(Role.ASSISTANT, api_txt)
-        elif api_result.finish_reason == 'function_call':
-            api_fc_params = api_result.message.function_call
-            logging.debug('Prompt response (func call): %s', api_fc_params)
-            return OpenAIFunctionCall(Role.ASSISTANT, api_fc_params)
+        elif api_result.finish_reason == 'tool_calls':
+            tool_call_obj = api_result.message.tool_calls[0]
+            logging.debug('Prompt response (tool call): %s', tool_call_obj)
+            return OpenAIFunctionCall(Role.ASSISTANT, tool_call_obj.function.name,
+                tool_call_obj.id, tool_call_obj.function.arguments)
         else:
             raise UnknownResponseError('Messages with `finish_reason`==`'+
                 api_result.finish_reason+'` cannot be parsed yet.')
 
-    def _handle_function_call(self, fc:OpenAIFunctionCall):
+    def _handle_function_call(self, fc:OpenAIFunctionCall)->OpenAIFunctionResponse:
         """Handles a function call from the API. This method should be
         overridden by subclasses that support function calls.
 
@@ -171,12 +178,7 @@ class OpenAIWrapper(ChatLLMWrapper):
                 return context, response.text
 
             elif isinstance(response, OpenAIFunctionCall):
-                func_call_response = self._handle_function_call(response)
-                message = OpenAIFunctionResponse(
-                    Role.ASSISTANT,
-                    response.name,
-                    func_call_response
-                )
+                message = self._handle_function_call(response)
 
             else:
                 raise UnknownResponseError('Response of type `'

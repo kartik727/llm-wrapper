@@ -18,11 +18,12 @@ def chat_ui(
     Returns:
         BaseChatObject: The context after the chat has ended.
     """
-    context = model.new_chat(sys_prompt)
+    if context is None:
+        context = model.new_chat(sys_prompt)
     while True:
         user_input = input('You: ')
         if user_input == exit_msg:
             break
         context, response = model.chat(context, user_input)
-        print(f'Assistant: {response}\n\n')
+        print(f'\nAssistant: {response}\n')
     return context
