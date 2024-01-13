@@ -75,7 +75,7 @@ class CompletionLLMWrapper(BaseLLMWrapper):
         """
 
     def completion(self, comp_obj:BaseCompletionObject, prompt:BaseMessage,
-            **kwargs)->BaseMessage:
+            )->BaseMessage:
         """Gets a response from the LLM.
 
         Args:
@@ -86,7 +86,8 @@ class CompletionLLMWrapper(BaseLLMWrapper):
             BaseMessage: The response from the LLM.
         """
         return self.get_response(
-            comp_obj.formatted_prompt(prompt, **kwargs))
+            self.formatted_prompt(comp_obj, prompt),
+            **comp_obj.completion_kwargs)
 
     def batch_completion(self,
             comp_obj:BaseCompletionObject,

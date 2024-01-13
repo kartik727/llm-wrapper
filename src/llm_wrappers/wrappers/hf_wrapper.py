@@ -6,7 +6,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from llm_wrappers.wrappers.base_wrapper import CompletionLLMWrapper, ChatLLMWrapper
 from llm_wrappers.io_objects.base_io_object import BaseIOObject, BaseMessage
-from llm_wrappers.io_objects.chat_object import TextChatObject
+from llm_wrappers.io_objects.chat_object import TextChatObject, BaseChatObject
 from llm_wrappers.io_objects.completion_object import TextCompletionObject
 from llm_wrappers.llm_config import HFConfig
 # from llm_wrappers.io_objects.hf_io_object import (HFMessage, Role,
@@ -88,9 +88,10 @@ class HFWrapper(CompletionLLMWrapper, ChatLLMWrapper):
 
     def formatted_prompt(self, context: BaseIOObject, prompt: BaseMessage)->list[dict]:
         cxt = [self.format_msg(context.sys_prompt)]
-        for exchange in context.history:
-            cxt.append(self.format_msg(exchange[0]))
-            cxt.append(self.format_msg(exchange[1]))
+        if isinstance(context, BaseChatObject):
+            for exchange in context.history:
+                cxt.append(self.format_msg(exchange[0]))
+                cxt.append(self.format_msg(exchange[1]))
         cxt.append(self.format_msg(prompt))
         return cxt
 
@@ -102,7 +103,11 @@ class HFWrapper(CompletionLLMWrapper, ChatLLMWrapper):
 
     def _set_tokenizer_padding_token(self, padding_token:str):
         if padding_token is not None:
+            # set user-specified padding token
             self._tokenizer.pad_token = getattr(self._tokenizer, padding_token)
+        elif self._tokenizer.pad_token is None:
+            # set the eos token to be the padding token
+            self._tokenizer.pad_token = self._tokenizer.eos_token
 
     def new_chat(self, sys_prompt:str, **kwargs)->TextChatObject:
         return TextChatObject(
@@ -129,9 +134,8 @@ class HFWrapper(CompletionLLMWrapper, ChatLLMWrapper):
     def completion(self, comp_obj:TextCompletionObject, prompt:str)->str:
         return super().completion(
             comp_obj,
-            # HFMessage(Role.USER, prompt),
-            BaseMessage(Role.USER, prompt),
-            **comp_obj.completion_kwargs)._message
+            BaseMessage(Role.USER, prompt)
+        )._message
 
     def batch_completion(self, comp_obj:TextCompletionObject,
             prompts:list[str], batch_size:int
@@ -156,3 +160,8 @@ class ZephyrWrapper(HFWrapper):
     def _parse_response(self, response:str)->BaseMessage:
         r_split = response.split(self.ASST_SEP)
         return BaseMessage(Role.ASSISTANT, r_split[-1].strip())
+    
+class PythiaWrapper(HFWrapper):
+    def _template_prompt(self, prompt:list[dict]):
+        return prompt[-1]['content']
+

@@ -13,6 +13,6 @@ except ImportError:
 
 try:
     from llm_wrappers.wrappers.hf_wrapper import (
-        HFWrapper, LlamaWrapper, ZephyrWrapper)
+        HFWrapper, LlamaWrapper, ZephyrWrapper, PythiaWrapper)
 except ImportError:
     logging.warning('LlamaWrapper not imported. Llama API not available.')

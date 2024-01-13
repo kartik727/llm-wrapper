@@ -59,10 +59,15 @@ class BaseChatObject(BaseIOObject):
         self._history = []
 
 class BaseCompletionObject(BaseIOObject):
-    def __init__(self, sys_prompt:str):
+    def __init__(self, sys_prompt:str, **kwargs):
         self._sys_prompt = sys_prompt
         self._completion = None
+        self._completion_kwargs = kwargs
 
     @property
     def sys_prompt(self)->str:
         return self._sys_prompt
+
+    @property
+    def completion_kwargs(self)->dict[str, Any]:
+        return self._completion_kwargs
