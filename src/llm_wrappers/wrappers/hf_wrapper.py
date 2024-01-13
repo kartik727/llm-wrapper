@@ -87,12 +87,12 @@ class HFWrapper(CompletionLLMWrapper, ChatLLMWrapper):
         return {'role' : msg._role.value, 'content' : msg._message}
 
     def formatted_prompt(self, context: BaseIOObject, prompt: BaseMessage)->list[dict]:
-        context = [self.format_msg(context.sys_prompt)]
-        for exchange in context._history:
-            context.append(self.format_msg(exchange[0]))
-            context.append(self.format_msg(exchange[1]))
-        context.append(self.format_msg(prompt))
-        return context
+        cxt = [self.format_msg(context.sys_prompt)]
+        for exchange in context.history:
+            cxt.append(self.format_msg(exchange[0]))
+            cxt.append(self.format_msg(exchange[1]))
+        cxt.append(self.format_msg(prompt))
+        return cxt
 
     def _parse_response(self, response:str)->BaseMessage:
         return BaseMessage(Role.ASSISTANT, response.strip())
@@ -124,7 +124,7 @@ class HFWrapper(CompletionLLMWrapper, ChatLLMWrapper):
             context,
             # HFMessage(Role.USER, user_prompt),
             BaseMessage(Role.USER, user_prompt))
-        return context, response.text
+        return context, response._message
 
     def completion(self, comp_obj:TextCompletionObject, prompt:str)->str:
         return super().completion(
