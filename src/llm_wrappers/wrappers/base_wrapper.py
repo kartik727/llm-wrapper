@@ -17,9 +17,10 @@ Optionally, they can implement the following methods if they subclass
 """
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from llm_wrappers.io_objects.base_io_object import (
-    BaseChatObject, BaseCompletionObject, BaseMessage)
+    BaseIOObject, BaseChatObject, BaseCompletionObject, BaseMessage)
 from llm_wrappers.llm_config.base_config import BaseConfig
 
 class BaseLLMWrapper(ABC):
@@ -51,6 +52,10 @@ class BaseLLMWrapper(ABC):
         Returns:
             list[BaseMessage]: The list of responses from the LLM.
         """
+
+    @abstractmethod
+    def formatted_prompt(self, context:BaseIOObject, prompt:BaseMessage)->Any:
+        ...
 
 class CompletionLLMWrapper(BaseLLMWrapper):
     """Base class for LLM wrappers that implement completion. The intended
@@ -136,6 +141,9 @@ class ChatLLMWrapper(BaseLLMWrapper):
             tuple[BaseChatObject, BaseMessage]: The updated chat context and
                 the response from the LLM.
         """
-        response = self.get_response(context.formatted_prompt(prompt), **kwargs)
+        # response = self.get_response(context.formatted_prompt(prompt), **kwargs)
+        response = self.get_response(
+            self.formatted_prompt(context, prompt), 
+            **kwargs)
         context.add_exchange(prompt, response)
         return context, response

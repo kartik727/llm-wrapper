@@ -5,17 +5,15 @@ This module contains a wrapper for the OpenAI API.
 
 import logging
 import time
+from typing import Any
 
-# import openai
 from openai import OpenAI, RateLimitError
-# from openai.error import ServiceUnavailableError
 
 from llm_wrappers.wrappers.base_wrapper import ChatLLMWrapper
 from llm_wrappers.llm_config.openai_config import OpenAIConfig
-from llm_wrappers.io_objects.openai_io_object import (Role, OpenAIMessage,
-    OpenAIFunctionCall, OpenAIFunctionResponse, UnknownResponseError,
-    OpenAIChatObject)
-
+from llm_wrappers.io_objects.base_io_object import BaseChatObject, BaseMessage
+from .openai_io_object import (Role, OpenAIMessage, OpenAIFunctionCall,
+    OpenAIFunctionResponse, UnknownResponseError, OpenAIChatObject)
 class OpenAIWrapper(ChatLLMWrapper):
     """Wrapper for the OpenAI API. Implements the ChatLLMWrapper interface.
 
@@ -39,8 +37,37 @@ class OpenAIWrapper(ChatLLMWrapper):
                 {
                     'type' : 'function',
                     'function' : func
-                } for func in functions
-            ]
+                } for func in functions]
+
+    def _formatted_msg(self, msg:BaseMessage)->dict:
+        if isinstance(msg, OpenAIFunctionCall):
+            return { 
+                'role' : msg.role.value,
+                'content' : None, 
+                'tool_calls' : [{
+                    'id' : msg.tool_call_id,
+                    'type' : 'function',
+                    'function' : {
+                        'name' : msg.name,
+                        'arguments' : msg.params}}]}
+
+        elif isinstance(msg, OpenAIFunctionResponse):
+            return {
+                'tool_call_id' : msg.tool_call_id,
+                'role' : msg.role.value, 
+                'name' : msg.name,
+                'content' : msg.text}
+
+        else:
+            return {'role' : msg.role.value, 'content' : msg.text}
+
+    def formatted_prompt(self, context: BaseChatObject, prompt: BaseMessage) -> Any:
+        formatted = [self._formatted_msg(context.sys_prompt)]
+        for (p, r) in context.history:
+            formatted.append(self._formatted_msg(p))
+            formatted.append(self._formatted_msg(r))
+        formatted.append(self._formatted_msg(prompt))
+        return formatted
 
     def get_response(self, prompt:list[dict], **kwargs
         )->OpenAIMessage | OpenAIFunctionCall:
@@ -107,20 +134,26 @@ class OpenAIWrapper(ChatLLMWrapper):
         """
         api_result = api_response.choices[0]
         assert api_result.message.role == 'assistant', \
-            f'Prompt response must be from `assistant`, not `{api_result.message.role}`'
+            ('Prompt response must be from `assistant`, '
+            f'not `{api_result.message.role}`')
+
+        logging.debug('Prompt response (raw): %s', api_result)
 
         if api_result.finish_reason == 'stop':
             api_txt = api_result.message.content
-            logging.debug('Prompt response (text): %s', api_txt)
             return OpenAIMessage(Role.ASSISTANT, api_txt)
         elif api_result.finish_reason == 'tool_calls':
             tool_call_obj = api_result.message.tool_calls[0]
-            logging.debug('Prompt response (tool call): %s', tool_call_obj)
             return OpenAIFunctionCall(Role.ASSISTANT, tool_call_obj.function.name,
                 tool_call_obj.id, tool_call_obj.function.arguments)
+        elif api_result.finish_reason is None and api_result.finish_details.get('type') == 'max_tokens':
+            api_txt = api_result.message.content
+            logging.warning('Max tokens reached. Response might be incomplete.')
+            return OpenAIMessage(Role.ASSISTANT, api_txt)
         else:
-            raise UnknownResponseError('Messages with `finish_reason`==`'+
-                api_result.finish_reason+'` cannot be parsed yet.')
+            raise UnknownResponseError('Messages with '
+                f'`finish_reason`==`{api_result.finish_reason}` '
+                'cannot be parsed yet.')
 
     def _handle_function_call(self, fc:OpenAIFunctionCall)->OpenAIFunctionResponse:
         """Handles a function call from the API. This method should be
@@ -140,8 +173,7 @@ class OpenAIWrapper(ChatLLMWrapper):
         return OpenAIChatObject(
             OpenAIMessage(
                 Role.SYSTEM,
-                sys_prompt)
-            )
+                sys_prompt))
 
     def chat(self, context:OpenAIChatObject, user_prompt:str, /, **kwargs
         )->tuple[OpenAIChatObject, str]:

@@ -1,40 +1,52 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from dataclasses import dataclass
 from typing import Any
 
 class BaseRole(Enum):
     ...
 
-@dataclass
 class BaseMessage(ABC):
-
-    @property
-    @abstractmethod
-    def formatted_msg(self)->Any:
-        ...
+    def __init__(self, role:BaseRole, message):
+        self._role = role
+        self._message = message
 
 class ChatInfo:
     def __init__(self):
         self.stats = {
             'n_prompt_tokens': 0,
             'n_completion_tokens': 0,
-            'n_total_tokens': 0
-        }
+            'n_total_tokens': 0}
         self.response_logs = []
 
-class BaseChatObject(ABC):
+class IOModality(Enum):
+    TEXT = 0
+    IMAGE = 1
+    AUDIO = 2
+    VIDEO = 3
+
+class BaseIOObject(ABC):
+    SUPPORTED_MODALITIES = []
+
+    @abstractmethod
+    def __init__(self, sys_prompt:BaseMessage):
+        ...
+
+    @abstractmethod
+    def to_json(self)->str:
+        ...
+
+class BaseChatObject(BaseIOObject):
     def __init__(self, sys_prompt:BaseMessage):
         self._sys_prompt = sys_prompt
         self._history = []
 
-    @abstractmethod
-    def formatted_prompt(self, prompt:BaseMessage)->Any:
-        ...
-
     @property
     def sys_prompt(self)->BaseMessage:
         return self._sys_prompt
+    
+    @property
+    def history(self)->list[tuple[BaseMessage, BaseMessage]]:
+        return self._history
 
     @property
     def chat_length(self)->int:
@@ -46,13 +58,10 @@ class BaseChatObject(ABC):
     def reset(self)->None:
         self._history = []
 
-class BaseCompletionObject(ABC):
+class BaseCompletionObject(BaseIOObject):
     def __init__(self, sys_prompt:str):
         self._sys_prompt = sys_prompt
-
-    @abstractmethod
-    def formatted_prompt(self, prompt:BaseMessage)->Any:
-        ...
+        self._completion = None
 
     @property
     def sys_prompt(self)->str:
