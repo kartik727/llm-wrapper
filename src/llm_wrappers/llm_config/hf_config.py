@@ -8,8 +8,8 @@ class HFConfig(BaseConfig):
         self._hf_api_key = hf_api_key
         self._device = self.validate_device(device)
         self._tokenizer_padding_token = tokenizer_padding_token
-        self._model_kwargs = model_kwargs
-        self._tokenizer_kwargs = tokenizer_kwargs
+        self._model_kwargs = {} if model_kwargs is None else model_kwargs
+        self._tokenizer_kwargs = {} if tokenizer_kwargs is None else tokenizer_kwargs
 
     @property
     def model_name(self)->str:

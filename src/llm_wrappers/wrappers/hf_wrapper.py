@@ -10,7 +10,7 @@ from llm_wrappers.io_objects.chat_object import TextChatObject
 from llm_wrappers.io_objects.completion_object import TextCompletionObject
 from llm_wrappers.llm_config import HFConfig
 # from llm_wrappers.io_objects.hf_io_object import (HFMessage, Role,
-    # HFChatObject, HFCompletionObject)
+#     HFChatObject, HFCompletionObject)
 
 class Role(Enum):
     SYSTEM = 'system'
@@ -123,8 +123,7 @@ class HFWrapper(CompletionLLMWrapper, ChatLLMWrapper):
         context, response = super().chat(
             context,
             # HFMessage(Role.USER, user_prompt),
-            BaseMessage(Role.USER, user_prompt)
-            **context.chat_kwargs)
+            BaseMessage(Role.USER, user_prompt))
         return context, response.text
 
     def completion(self, comp_obj:TextCompletionObject, prompt:str)->str:
