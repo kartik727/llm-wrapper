@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "llm_wrappers"
-version = "0.1.0"
+version = "2.0.0-alpha.1"
 authors = [
   { name="Kartik Choudhary", email="kartikchoudh@umass.edu" },
 ]
