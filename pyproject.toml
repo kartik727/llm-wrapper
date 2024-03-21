@@ -4,7 +4,11 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "llm_wrappers"
-version = "2.0.0-alpha.1"
+version = "2.0.0-alpha.2"
+dependencies = [
+  "numpy>=1.26.0",
+  "pandas>=2.0.0"
+]
 authors = [
   { name="Kartik Choudhary", email="kartikchoudh@umass.edu" },
 ]
@@ -16,7 +20,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-
+[project.optional-dependencies]
+openai = ["openai>=1.0.0"]
+hf = [
+  "torch",
+  "transformers",
+  "accelerate"
+]
 [project.urls]
 "Homepage" = "https://github.com"
 "Bug Tracker" = "https://github.com"
