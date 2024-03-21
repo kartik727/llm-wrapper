@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "llm_wrappers"
-version = "2.0.0-alpha.2"
+version = "2.0.0-alpha.3"
 dependencies = [
   "numpy>=1.26.0",
   "pandas>=2.0.0"
@@ -22,6 +22,7 @@ classifiers = [
 ]
 [project.optional-dependencies]
 openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.19.0,<1.0.0"]
 hf = [
   "torch",
   "transformers",
