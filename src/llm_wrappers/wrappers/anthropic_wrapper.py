@@ -1,6 +1,10 @@
 """Wrapper for the OpenAI API."""
 
-from anthropic import Anthropic
+try:
+    from anthropic import Anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
 
 from .base_wrapper import ChatWrapper
 from ..utils.config import LLMConfig
@@ -17,6 +21,10 @@ class AnthropicChatWrapper(ChatWrapper):
         Args:
             config (LLMConfig): The config for the wrapper.
         """
+        if not ANTHROPIC_AVAILABLE:
+            raise RuntimeError(
+                'Cannot initialize AnthropicChatWrapper: '
+                'The `anthropic` package is not installed. ')
         super().__init__(config)
 
         if self._config.api_keys.get('anthropic_api_key') is not None:

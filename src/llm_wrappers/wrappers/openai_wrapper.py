@@ -1,7 +1,12 @@
 """Wrapper for the OpenAI API."""
 
 import json
-from openai import OpenAI
+
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
 
 from .base_wrapper import ChatWrapper
 from ..utils.config import LLMConfig
@@ -20,6 +25,11 @@ class OpenAIChatWrapper(ChatWrapper):
         Args:
             config (LLMConfig): The config for the wrapper.
         """
+        if not OPENAI_AVAILABLE:
+            raise RuntimeError(
+                'Cannot initialize OpenAIChatWrapper: '
+                'The `openai` package is not installed. ')
+
         super().__init__(config)
 
         if self._config.api_keys.get('openai_api_key') is not None:
