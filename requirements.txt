@@ -1,6 +1,6 @@
 numpy
 pandas
-openai==0.28.1
+openai
 torch
 transformers
 accelerate

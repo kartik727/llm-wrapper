@@ -1,150 +1,72 @@
-"""Base class and interfaces for LLM wrappers.
-
-Wrappers are used to abstract away the details of interacting with the API.
-They should implement the following methods:
-    
-    get_response(prompt, **kwargs)
-    get_batch_response(prompts, **kwargs)
-
-Optionally, they can implement the following methods if they subclass
-`CompletionLLMWrapper` or `ChatLLMWrapper`:
-    
-    new_chat(sys_prompt, **kwargs)
-    chat(context, prompt, **kwargs)
-
-    new_completion(sys_prompt, **kwargs)
-    completion(context, prompt, **kwargs)
-"""
-
 from abc import ABC, abstractmethod
-from typing import Any
 
-from llm_wrappers.io_objects.base_io_object import (
-    BaseIOObject, BaseChatObject, BaseCompletionObject, BaseMessage)
-from llm_wrappers.llm_config.base_config import BaseConfig
+from ..utils.config import LLMConfig
+from ..utils.io import Input, BaseIO, ChatOutput
 
-class BaseLLMWrapper(ABC):
-    """Base class for LLM wrappers.
-    """
 
-    def __init__(self, config:BaseConfig):
-        """Initializes the LLM wrapper.""" 
+class BaseWrapper(ABC):
+    def __init__(self, config: LLMConfig, **kwargs):
         self._config = config
+        self.api_key = config.api_keys.get('default')
 
     @abstractmethod
-    def get_response(self, prompt, **kwargs)->BaseMessage:
-        """Sends a user prompt to the LLM and returns the response.
+    def get_response(self, input: Input) -> BaseIO:
+        """Sends the user input to the LLM and returns the response.
 
         Args:
-            prompt: The prompt to send to the LLM.
+            input (Input): The user input.
 
         Returns:
-            BaseMessage: The response from the LLM.
+            BaseIO: The response from the LLM.
         """
 
-    @abstractmethod
-    def get_batch_response(self, prompts:list, **kwargs)->list[BaseMessage]:
-        """Sends a batch of user prompts to the LLM and returns the responses.
+    def get_batch_response(self, inputs: list[Input]) -> list[BaseIO]:
+        """Sends a batch of user inputs to the LLM and returns the responses.
 
         Args:
-            prompts (list): The list of prompts to send to the LLM.
+            inputs (list[Input]): The list of user inputs.
 
         Returns:
-            list[BaseMessage]: The list of responses from the LLM.
+            list[BaseIO]: The list of responses from the LLM.
         """
+        return [self.get_response(input) for input in inputs]
 
-    @abstractmethod
-    def formatted_prompt(self, context:BaseIOObject, prompt:BaseMessage)->Any:
-        ...
 
-class CompletionLLMWrapper(BaseLLMWrapper):
-    """Base class for LLM wrappers that implement completion. The intended
-    use case is to get one response from the LLM after giving it one prompt,
-    and optionally setting a system prompt beforehand.
-    """
-
-    @abstractmethod
-    def new_completion(self, sys_prompt:str, **kwargs)->BaseCompletionObject:
-        """Creates a new completion object.
+class ChatWrapper(BaseWrapper):
+    def chat(self, prompt: str, *, context: list[tuple] | None = None,
+             sys_prompt: str | None = None, **kwargs) -> ChatOutput:
+        """Creates a chat input object and sends it to the LLM.
 
         Args:
-            sys_prompt (str): The system prompt to use for the completion.
+            prompt (str): The user prompt.
+            context (list[tuple], optional): The context. Defaults to None.
+            sys_prompt (str, optional): The system prompt. Defaults to None.
 
         Returns:
-            BaseCompletionObject: The completion object.
+            BaseIO: The response from the LLM.
         """
+        if not ((context is None) or (sys_prompt is None)):
+            raise ValueError('Can not set both context and system prompt')
 
-    def completion(self, comp_obj:BaseCompletionObject, prompt:BaseMessage,
-            )->BaseMessage:
-        """Gets a response from the LLM.
+        if context is not None:
+            if len(context) == 0:
+                pass
+            elif context[0][2]['role'] == 'system':
+                sys_prompt = context[0][0]
+                history = [(c[0], c[1]) for c in context[1:]]
+            else:
+                history = [(c[0], c[1]) for c in context]
+        else:
+            history = []
 
-        Args:
-            comp_obj (BaseCompletionObject): The completion object.
-            prompt (BaseMessage): The user prompt.
+        input = Input.chat(prompt, history=history, sys_prompt=sys_prompt)
 
-        Returns:
-            BaseMessage: The response from the LLM.
-        """
-        return self.get_response(
-            self.formatted_prompt(comp_obj, prompt),
-            **comp_obj.completion_kwargs)
+        return self.get_response(input, **kwargs)
 
-    def batch_completion(self,
-            comp_obj:BaseCompletionObject,
-            prompts:list[str|BaseChatObject],
-            **kwargs
-        )->list[BaseMessage]:
-        """Gets a batch of responses from the LLM.
+    def _is_tool_call(self, model_response) -> bool:
+        """Check if the model response is a tool call."""
+        return False
 
-        Args:
-            comp_obj (BaseCompletionObject): The completion object.
-            prompts (list[str | BaseChatObject]): The list of user prompts.
-
-        Returns:
-            list[BaseMessage]: The list of responses from the LLM.
-        """
-        return self.get_batch_response(
-            [comp_obj.formatted_prompt(prompt) for prompt in prompts],
-            **kwargs)
-
-class ChatLLMWrapper(BaseLLMWrapper):
-    """Base class for LLM wrappers that implement chat. The intended use case
-    is to get a sequence of alternating responses from the LLM and user in 
-    a chat-like setting, and optionally setting a system prompt beforehand.
-    """
-
-    @abstractmethod
-    def new_chat(self, sys_prompt:str, /, **kwargs)->BaseChatObject:
-        """Creates a new chat object.
-
-        Args:
-            sys_prompt (str): The system prompt to use for the chat.
-
-        Returns:
-            BaseChatObject: The chat object.
-        """
-
-    def chat(self,
-            context:BaseChatObject,
-            prompt:BaseMessage,
-            /,
-            **kwargs
-        )->tuple[BaseChatObject, BaseMessage]:
-        """Sends a user prompt to the LLM and returns the response. The
-        intended use case is to call this method in a loop, with the response
-        from the previous call as the `context` argument.
-
-        Args:
-            context (BaseChatObject): The chat object.
-            prompt (BaseMessage): The user prompt.
-
-        Returns:
-            tuple[BaseChatObject, BaseMessage]: The updated chat context and
-                the response from the LLM.
-        """
-        # response = self.get_response(context.formatted_prompt(prompt), **kwargs)
-        response = self.get_response(
-            self.formatted_prompt(context, prompt), 
-            **kwargs)
-        context.add_exchange(prompt, response)
-        return context, response
+    def _handle_tool_call(self, model_response) -> list[str]:
+        raise NotImplementedError('This method should be implemented in a '
+                                  'subclass of ChatWrapper')
