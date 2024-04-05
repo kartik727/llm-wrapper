@@ -1,4 +1,5 @@
-
+"""Wrappers of LLM APIs."""
+from .. import logger  # noqa: F401
 
 from .base_wrapper import BaseWrapper
 from .dummy_wrapper import DummyChatWrapper
