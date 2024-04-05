@@ -12,6 +12,7 @@ from .base_wrapper import ChatWrapper
 from ..utils.config import LLMConfig
 from ..utils.io import ChatInput, ChatOutput
 from ..utils.constants import modalities
+from . import logger
 
 
 class OpenAIChatWrapper(ChatWrapper):
@@ -51,6 +52,9 @@ class OpenAIChatWrapper(ChatWrapper):
             response_message = self.client.chat.completions.create(
                 model=self.model, messages=messages,
                 **kwargs).choices[0].message
+            logger.info('OpenAI API call',
+                        extra={'prompt': messages,
+                               'response': response_message})
 
             if self._is_tool_call(response_message):
                 responses = self._handle_tool_call(response_message)
